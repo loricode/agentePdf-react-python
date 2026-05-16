@@ -26,7 +26,13 @@ export const QuestionInput = ({
                 placeholder="Pregunta algo..."
                 onKeyDown={onKeyDown}
                 onInput={autoResize}
-                className="resize-none overflow-hidden w-full"
+                className="
+                px-4
+                    py-3
+                    rounded-xl
+                    bg-zinc-900
+                    text-white
+                resize-none overflow-hidden w-full"
             />
 
             <SendButton onClick={onSend} />

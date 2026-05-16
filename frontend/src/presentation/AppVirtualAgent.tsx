@@ -5,17 +5,19 @@ import { usePdfSearch } from './hooks/usePdfSearch';
 import { useAutoResize } from './hooks/useAutoResize';
 import { ChatMessages } from './components/Chat/ChatMessages';
 import { QuestionInput } from './components/Chat/QuestionInput';
+import { PdfSearch } from './components/Pdf/PdfSearch';
+import { PdfUploader } from './components/Pdf/PdfUploader';
+import { useAskPdf } from './hooks/useAskPdf';
 
 export default function AppVirtualAgent() {
 
     const textRef = useRef<HTMLDivElement | null>(null);
+    const inputRef = useRef<HTMLTextAreaElement | null>(null);
+    const [messages, setMessages] = useState([]);
+    
     const { pdfState, setPdfState } = usePdfSearch();
 
-    const [messages, setMessages] = useState([]);
-
-    const inputRef =
-        useRef<HTMLTextAreaElement | null>(null);
-
+    const askPdf = useAskPdf({ textRef, inputRef });
 
     const autoResize = useAutoResize(inputRef);
 
@@ -34,10 +36,11 @@ export default function AppVirtualAgent() {
     break-words
     shadow-lg
     text-[15px]
-    leading-relaxed   bg-blue-600
-        rounded-br-md`
-        div.textContent = message;
-        textRef.current?.appendChild(div);
+    leading-relaxed 
+    bg-blue-600
+    rounded-br-md`
+    div.textContent = message;
+    textRef.current?.appendChild(div);
 
     }
 
@@ -74,53 +77,6 @@ export default function AppVirtualAgent() {
         }
     };
 
-
-    const askPdf = async ({ idPdf = '', question = '' }) => {
-
-        if (inputRef.current) {
-            inputRef.current.value = '';
-        }
-
-        const res = await askPdfService(question, idPdf);
-
-        const reader = res.body!.getReader();
-        const decoder = new TextDecoder();
-
-        const div = document.createElement("div");
-        div.className = `max-w-[75%]
-    px-5
-    py-3
-    rounded-2xl
-    text-white
-    whitespace-pre-wrap
-    break-words
-    shadow-lg
-    text-[15px]
-    leading-relaxed 
-    bg-zinc-800
-    rounded-bl-md`
-        div.textContent = '';
-        textRef.current?.appendChild(div);
-
-        while (true) {
-
-            const { done, value } = await reader.read();
-
-            if (done) {
-
-                break;
-            }
-
-            if (textRef.current) {
-                div.textContent =
-                    (div.textContent || "") + decoder.decode(value);
-
-                textRef.current.scrollTop =
-                    textRef.current.scrollHeight;
-            }
-
-        }
-    };
 
     const uploadPdf = async (
         file: File
@@ -159,62 +115,7 @@ export default function AppVirtualAgent() {
 
             <h1>Resumen</h1>
 
-            <div className="w-full max-w-md">
-                <label
-                    htmlFor="pdf-upload"
-                    className="
-      flex
-      flex-col
-      items-center
-      justify-center
-      w-full
-      h-40
-      border-2
-      border-dashed
-      rounded-2xl
-      cursor-pointer
-      transition
-      bg-zinc-900
-      border-zinc-700
-      hover:border-blue-500
-      hover:bg-zinc-800
-    "
-                >
-                    <svg
-                        className="w-10 h-10 mb-3 text-zinc-400"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M12 16V4m0 0l-4 4m4-4l4 4M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1"
-                        />
-                    </svg>
-
-                    <p className="text-sm text-zinc-300">
-                        Click para subir PDF
-                    </p>
-
-                    <p className="text-xs text-zinc-500 mt-1">
-                        PDF hasta 10MB
-                    </p>
-
-                    <input
-                        id="pdf-upload"
-                        type="file"
-                        accept=".pdf"
-                        className="hidden"
-                        onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            uploadPdf(file!);
-                        }}
-                    />
-                </label>
-            </div>
-
+           <PdfUploader onUpload={uploadPdf} />
 
             {pdfState.selectedPdf && (
                 <div className="mt-3 text-sm text-green-400">
@@ -222,75 +123,15 @@ export default function AppVirtualAgent() {
                 </div>
             )}
 
-            <div className="w-full max-w-md relative">
-
-                {/* INPUT */}
-                <input
-                    value={pdfState.query}
-                    onChange={(e) => setPdfState(prev => ({ ...prev, query: e.target.value }))}
-                    placeholder="Buscar PDF..."
-                    className="
-          w-full
-          px-4
-          py-3
-          rounded-xl
-          bg-zinc-900
-          text-white
-          border
-          border-zinc-700
-          focus:ring-2
-          focus:ring-blue-500
-          outline-none
-        "
-                    onFocus={() => setPdfState(prev => ({ ...prev, open: true }))}
-                />
-
-                {/* DROPDOWN */}
-                {pdfState.open && pdfState.results.length > 0 && !pdfState.selectedPdf && (
-                    <div className="
-          absolute
-          w-full
-          mt-2
-          bg-zinc-900
-          border
-          border-zinc-700
-          rounded-xl
-          overflow-hidden
-          shadow-lg
-          z-50
-        ">
-                        {pdfState.results.map((pdf) => (
-                            <div
-                                key={pdf.pdf_uuid}
-                                onClick={() => {
-                                    setPdfState(prev => ({
-                                        ...prev,
-                                        selectedPdf: pdf,
-                                        query: pdf.name,
-                                        open: false,
-                                    }));
-                                }}
-                                className="
-                px-4
-                py-3
-                hover:bg-zinc-800
-                cursor-pointer
-                text-white
-              "
-                            >
-                                {pdf.name}
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-            </div>
+          <PdfSearch pdfState={pdfState} setPdfState={setPdfState}/>
 
             <QuestionInput
                 onKeyDown={handleKeyDown}
                 onSend={() => {
-                    askPdf({ idPdf: pdfState.selectedPdf?.pdf_uuid, question: inputRef.current?.value })
-                    addQuestion(inputRef.current?.value);
+                    if(inputRef.current?.value){
+                      addQuestion(inputRef.current?.value);
+                      askPdf({ idPdf: pdfState.selectedPdf?.pdf_uuid, question: inputRef.current?.value })
+                    }
                 }}
                 autoResize={autoResize}
                 inputRef={inputRef} />
