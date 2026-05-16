@@ -1,20 +1,16 @@
 
-# version python 3.14-64
+# Version 
+python 3.14-64
 
-# crear el entorno virtaul
+# Crear el entorno virtaul
 python -m venv venv   
 
- # para activar el entorno virtual 
- venv\Scripts\activate 
+# Activar el entorno virtual 
+venv\Scripts\activate 
 
-# paquetes
- pip install pymupdf 
- pip install python-multipart
- pip install sqlalchemy aiosqlite  
- pip install orjson 
- pip install fastapi uvicorn 
- pip install sentence-transformers  
-
+# Paquetes utilizados
+pip install pymupdf python-multipart sqlalchemy aiosqlite orjson fastapi uvicorn 
+sentence-transformers  
 
 # para correr la app
 uvicorn app:app --reload
