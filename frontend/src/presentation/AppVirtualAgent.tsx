@@ -1,42 +1,20 @@
 import { useRef, useState, useEffect } from 'react';
 import { askPdfService, searchPdf } from '../services/agenteService';
 import { SendButton } from './components/Buttons/SendButton';
+import { usePdfSearch } from './hooks/usePdfSearch';
 
 export default function AppVirtualAgent() {
 
     const textRef = useRef<HTMLDivElement | null>(null);
-    const [pdfState, setPdfState] = useState({
-        selectedPdf: null as PDF | null,
-        query: "",
-        open: false,
-        results: [] as PDF[]
-    });
+    const { pdfState, setPdfState } = usePdfSearch();
 
     const [messages, setMessages] = useState([]);
 
     const inputRef =
         useRef<HTMLTextAreaElement | null>(null);
 
-    useEffect(() => {
-
-        if (pdfState.query.length < 2) {
-            setPdfState(prev => ({ ...prev, results: [] }))
-            return;
-        }
-
-        const delay = setTimeout(async () => {
-
-            const data = await searchPdf(pdfState.query)
-
-            setPdfState(prev => ({ ...prev, open: true, results: data }))
-
-        }, 300);
-
-        return () => clearTimeout(delay);
-
-    }, [pdfState.query]);
-
-    const addStateQuestionAndResult = (message: string | undefined) => {
+  
+    const addQuestion = (message: string | undefined) => {
 
         if (!message) return
 
@@ -346,7 +324,7 @@ export default function AppVirtualAgent() {
 
                 <SendButton onClick={() => {
                     askPdf({ idPdf: pdfState.selectedPdf?.pdf_uuid, question: inputRef.current?.value })
-                    addStateQuestionAndResult(inputRef.current?.value);
+                    addQuestion(inputRef.current?.value);
                 }
 
                 } />
