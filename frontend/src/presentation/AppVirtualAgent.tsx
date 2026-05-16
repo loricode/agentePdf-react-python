@@ -2,6 +2,9 @@ import { useRef, useState, useEffect } from 'react';
 import { askPdfService, searchPdf } from '../services/agenteService';
 import { SendButton } from './components/Buttons/SendButton';
 import { usePdfSearch } from './hooks/usePdfSearch';
+import { useAutoResize } from './hooks/useAutoResize';
+import { ChatMessages } from './components/Chat/ChatMessages';
+import { QuestionInput } from './components/Chat/QuestionInput';
 
 export default function AppVirtualAgent() {
 
@@ -13,7 +16,9 @@ export default function AppVirtualAgent() {
     const inputRef =
         useRef<HTMLTextAreaElement | null>(null);
 
-  
+
+    const autoResize = useAutoResize(inputRef);
+
     const addQuestion = (message: string | undefined) => {
 
         if (!message) return
@@ -69,24 +74,13 @@ export default function AppVirtualAgent() {
         }
     };
 
-    const autoResize = () => {
-
-        if (!inputRef.current) return;
-
-        const textarea = inputRef.current;
-
-        textarea.style.height = "auto";
-
-        textarea.style.height =
-            textarea.scrollHeight + "px";
-    };
 
     const askPdf = async ({ idPdf = '', question = '' }) => {
-     
-        if(inputRef.current){
+
+        if (inputRef.current) {
             inputRef.current.value = '';
         }
-        
+
         const res = await askPdfService(question, idPdf);
 
         const reader = res.body!.getReader();
@@ -113,7 +107,7 @@ export default function AppVirtualAgent() {
             const { done, value } = await reader.read();
 
             if (done) {
-                
+
                 break;
             }
 
@@ -292,67 +286,17 @@ export default function AppVirtualAgent() {
 
             </div>
 
-            <div className="flex gap-2 items-center w-full max-w-md">
-
-                <textarea
-                    id='areaQuestion'
-                    ref={inputRef}
-                    rows={1}
-                    placeholder="Pregunta algo..."
-                    onKeyDown={handleKeyDown}
-                    onInput={autoResize}
-                    className="
-                      resize-none
-    overflow-hidden
-          w-full
-          max-w-2xl
-          min-h-[56px]
-          max-h-[300px]
-          resize-none
-          px-2
-          py-4
-          rounded-2xl
-          bg-[#2f2f2f]
-          text-white
-          placeholder:text-zinc-400
-          outline-none
-          transition-all
-          focus:ring-4
-          focus:ring-zinc-800
-        "
-                />
-
-                <SendButton onClick={() => {
+            <QuestionInput
+                onKeyDown={handleKeyDown}
+                onSend={() => {
                     askPdf({ idPdf: pdfState.selectedPdf?.pdf_uuid, question: inputRef.current?.value })
                     addQuestion(inputRef.current?.value);
-                }
-
-                } />
-
-            </div>
-
-
-            <div
-                className='
-                
-    flex
-    flex-col
-    gap-4
-    p-4
-    rounded-2xl'
-                ref={textRef}
-                style={{
-                    fontSize: "20px",
-                    whiteSpace: "pre-wrap",
                 }}
-            />
+                autoResize={autoResize}
+                inputRef={inputRef} />
 
+            <ChatMessages textRef={textRef} />
 
         </div>
     );
 }
-
-type PDF = {
-    pdf_uuid: string;
-    name: string;
-};
